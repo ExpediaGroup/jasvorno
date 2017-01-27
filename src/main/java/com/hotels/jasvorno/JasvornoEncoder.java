@@ -78,9 +78,9 @@ public class JasvornoEncoder extends ParsingEncoder implements Parser.ActionHand
 
   /**
    * Reconfigures this JsonEncoder to use the output stream provided.
-   * <p/>
+   * <p></p>
    * If the OutputStream provided is null, a NullPointerException is thrown.
-   * <p/>
+   * <p></p>
    * Otherwise, this JsonEncoder will flush its current output and then reconfigure its output to use a default UTF8
    * JsonGenerator that writes to the provided OutputStream.
    *
@@ -95,9 +95,9 @@ public class JasvornoEncoder extends ParsingEncoder implements Parser.ActionHand
 
   /**
    * Reconfigures this JsonEncoder to output to the JsonGenerator provided.
-   * <p/>
+   * <p></p>
    * If the JsonGenerator provided is null, a NullPointerException is thrown.
-   * <p/>
+   * <p></p>
    * Otherwise, this JsonEncoder will flush its current output and then reconfigure its output to use the provided
    * JsonGenerator.
    *

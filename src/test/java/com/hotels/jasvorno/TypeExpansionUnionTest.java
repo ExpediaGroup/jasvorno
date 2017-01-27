@@ -31,7 +31,7 @@ import com.hotels.Schemas;
 /**
  * This uses Kite to decode the JSON, resolves unions by making inferences from both the data and the schema. Cannot
  * handle AvroJson encoded unions for a given schema.
- * <p/>
+ * <p></p>
  * Type conversion union; null, int, long
  */
 public class TypeExpansionUnionTest {

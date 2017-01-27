@@ -479,7 +479,7 @@ public class JasvornoConverter {
 
   /**
    * Returns whether null is allowed by the schema.
-   * <p/>
+   * <p></p>
    * Copied from {@code org.kitesdk.data.spi.SchemaUtil.nullOk(Schema)}.
    *
    * @param schema a Schema

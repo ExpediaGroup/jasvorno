@@ -38,7 +38,7 @@ import com.hotels.Schemas;
 /**
  * This uses AvroJson to decode the JSON, resolves unions strictly using the schema. Cannot handle unions values that
  * are not explicitly typed.
- * <p/>
+ * <p></p>
  * Complex union; null, string, long, record
  */
 public class ComplexUnionAvroTest {
