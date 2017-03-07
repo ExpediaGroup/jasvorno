@@ -12,6 +12,7 @@
   <version>1.0.1-SNAPSHOT</version>
   <name>JASVORNO: JSON ⟷ Avro converter</name>
   <description>Marshalls arbitrary vanilla JSON documents to/from Avro using a Schema.</description>
+  <inceptionYear>2016</inceptionYear>
 
   <scm>
     <connection>scm:git:git@github.com:HotelsDotCom/jasvorno.git</connection>
