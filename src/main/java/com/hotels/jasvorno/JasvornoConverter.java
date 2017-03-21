@@ -121,6 +121,7 @@ public class JasvornoConverter {
   private final UndeclaredFieldBehaviour undeclaredFieldBehaviour;
   private final GenericData model;
 
+  @VisibleForTesting
   JasvornoConverter(GenericData model, UndeclaredFieldBehaviour undeclaredFieldBehaviour) {
     this.model = model;
     this.undeclaredFieldBehaviour = undeclaredFieldBehaviour;
