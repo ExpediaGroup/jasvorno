@@ -33,7 +33,7 @@ import org.junit.Test;
 public class UndeclaredFieldsTest {
 
   /**
-   * It is valid when using a canBeReadStrategy, for messages will arrive with fields not declared in the earlier
+   * It is valid when using a canBeReadStrategy for messages to arrive with fields not declared in the earlier
    * schema.
    */
   @Test
@@ -45,7 +45,7 @@ public class UndeclaredFieldsTest {
   }
 
   /**
-   * It is valid when using a canBeReadStrategy, for messages will arrive with fields not declared in the earlier
+   * It is valid when using a canBeReadStrategy for messages to arrive with fields not declared in the earlier
    * schema.
    */
   @Test
