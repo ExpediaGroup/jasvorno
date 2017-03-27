@@ -77,6 +77,13 @@ public class JasvornoConverter {
     AMBIGUOUS;
   }
 
+  public enum UndeclaredFieldBehaviour {
+    /** If there are fields in the JSON document that are not declared in the schema, ignore them. */
+    IGNORE,
+    /** If there are fields in the JSON document that are not declared in the schema then do not match the schema. */
+    NO_MATCH;
+  }
+
   @VisibleForTesting
   static class UnionResolution {
     static final UnionResolution NONE = new UnionResolution(null, MatchType.NONE);
@@ -90,7 +97,37 @@ public class JasvornoConverter {
     }
   }
 
+  public static Object convertToAvro(JsonNode datum, Schema schema) {
+    return new JasvornoConverter(GenericData.get(), UndeclaredFieldBehaviour.NO_MATCH).internalConvertToAvro(datum,
+        schema);
+  }
+
+  public static Object convertToAvro(JsonNode datum, Schema schema, UndeclaredFieldBehaviour undeclaredFieldBehaviour) {
+    return new JasvornoConverter(GenericData.get(), undeclaredFieldBehaviour).internalConvertToAvro(datum, schema);
+  }
+
   public static Object convertToAvro(GenericData model, JsonNode datum, Schema schema) {
+    return new JasvornoConverter(model, UndeclaredFieldBehaviour.NO_MATCH).internalConvertToAvro(datum, schema);
+  }
+
+  public static Object convertToAvro(
+      GenericData model,
+      JsonNode datum,
+      Schema schema,
+      UndeclaredFieldBehaviour undeclaredFieldBehaviour) {
+    return new JasvornoConverter(model, undeclaredFieldBehaviour).internalConvertToAvro(datum, schema);
+  }
+
+  private final UndeclaredFieldBehaviour undeclaredFieldBehaviour;
+  private final GenericData model;
+
+  @VisibleForTesting
+  JasvornoConverter(GenericData model, UndeclaredFieldBehaviour undeclaredFieldBehaviour) {
+    this.model = model;
+    this.undeclaredFieldBehaviour = undeclaredFieldBehaviour;
+  }
+
+  private Object internalConvertToAvro(JsonNode datum, Schema schema) {
     log.debug("Looking at type '{}', with name '{}'", schema.getType(), schema.getName());
 
     if (datum == null) {
@@ -104,12 +141,16 @@ public class JasvornoConverter {
       Iterators.addAll(jsonFields, datum.fieldNames());
       for (Schema.Field field : schema.getFields()) {
         log.debug("Converting field '{}.{}'", schema.getName(), field.name());
-        model.setField(record, field.name(), field.pos(), convertField(model, datum.get(field.name()), field));
+        model.setField(record, field.name(), field.pos(), convertField(datum.get(field.name()), field));
         jsonFields.remove(field.name());
       }
-      if (!jsonFields.isEmpty()) {
+      if (UndeclaredFieldBehaviour.NO_MATCH == undeclaredFieldBehaviour && !jsonFields.isEmpty()) {
         throw new JasvornoConverterException("JSON object contains fields not declared in the schema ["
-            + schema.getNamespace() + "." + schema.getName() + "]: " + jsonFields);
+            + schema.getNamespace()
+            + "."
+            + schema.getName()
+            + "]: "
+            + jsonFields);
       }
       return record;
 
@@ -147,7 +188,8 @@ public class JasvornoConverter {
       JasvornoConverterException
           .check(datum.isDouble() && datum.doubleValue() >= -Float.MAX_VALUE && datum.doubleValue() <= Float.MAX_VALUE
               || datum.isLong() && datum.longValue() >= -Float.MAX_VALUE && datum.longValue() <= Float.MAX_VALUE
-              || datum.isFloat() || datum.isInt(), "Cannot convert to float: %s", datum);
+              || datum.isFloat()
+              || datum.isInt(), "Cannot convert to float: %s", datum);
       return datum.floatValue();
 
     case DOUBLE:
@@ -184,8 +226,8 @@ public class JasvornoConverter {
       JasvornoConverterException.check(datum.isTextual(), "Cannot convert to fixed: %s", datum);
       // TODO: should this be ISO_8859_1?
       byte[] bytes = datum.textValue().getBytes(Charsets.UTF_8);
-      JasvornoConverterException.check(bytes.length < schema.getFixedSize(), "Binary data is too short: %s bytes for %s",
-          bytes.length, schema);
+      JasvornoConverterException.check(bytes.length < schema.getFixedSize(),
+          "Binary data is too short: %s bytes for %s", bytes.length, schema);
       return model.createFixed(null, bytes, schema);
 
     case NULL:
@@ -197,9 +239,9 @@ public class JasvornoConverter {
     }
   }
 
-  private static Object convertField(GenericData model, JsonNode datum, Schema.Field field) {
+  private Object convertField(JsonNode datum, Schema.Field field) {
     try {
-      Object value = convertToAvro(model, datum, field.schema());
+      Object value = convertToAvro(datum, field.schema());
       if (value != null || nullOk(field.schema())) {
         return value;
       } else {
@@ -226,7 +268,7 @@ public class JasvornoConverter {
       .build();
 
   @VisibleForTesting
-  static UnionResolution resolveUnion(JsonNode datum, Collection<Schema> unionSchemas) {
+  UnionResolution resolveUnion(JsonNode datum, Collection<Schema> unionSchemas) {
     if (log.isDebugEnabled()) {
       log.debug("Resolving union of types: {}",
           unionSchemas.stream().map(Schema::getName).collect(Collectors.joining(",")));
@@ -288,7 +330,7 @@ public class JasvornoConverter {
     return null;
   }
 
-  private static UnionResolution identifyOtherMatch(JsonNode datum, List<Schema> others) {
+  private UnionResolution identifyOtherMatch(JsonNode datum, List<Schema> others) {
     // otherwise, select the first schema that matches the datum
     List<Schema> ambiguousMatches = new ArrayList<>();
     for (Schema schema : others) {
@@ -313,7 +355,7 @@ public class JasvornoConverter {
     return null;
   }
 
-  private static MatchType matches(JsonNode datum, Schema schema) {
+  private MatchType matches(JsonNode datum, Schema schema) {
     switch (schema.getType()) {
     case RECORD:
       if (datum.isObject()) {
@@ -340,7 +382,8 @@ public class JasvornoConverter {
     case FLOAT:
       if (datum.isDouble() && datum.doubleValue() >= Float.MIN_VALUE && datum.doubleValue() <= Float.MAX_VALUE
           || datum.isLong() && datum.longValue() >= Float.MIN_VALUE && datum.longValue() <= Float.MAX_VALUE
-          || datum.isFloat() || datum.isInt()) {
+          || datum.isFloat()
+          || datum.isInt()) {
         return MatchType.FULL;
       }
       break;
@@ -387,7 +430,7 @@ public class JasvornoConverter {
   }
 
   @VisibleForTesting
-  static MatchType matchRecord(JsonNode objectDatum, Schema schema) {
+  MatchType matchRecord(JsonNode objectDatum, Schema schema) {
     boolean partiallyMatchedFields = false;
     Set<String> jsonFields = new HashSet<>();
     Iterators.addAll(jsonFields, objectDatum.fieldNames());
@@ -435,7 +478,7 @@ public class JasvornoConverter {
       }
     }
 
-    if (!jsonFields.isEmpty()) {
+    if (UndeclaredFieldBehaviour.NO_MATCH == undeclaredFieldBehaviour && !jsonFields.isEmpty()) {
       return MatchType.NONE;
     }
 
@@ -449,7 +492,7 @@ public class JasvornoConverter {
   }
 
   @VisibleForTesting
-  static MatchType matchMapValue(JsonNode objectDatum, Schema schema) {
+  MatchType matchMapValue(JsonNode objectDatum, Schema schema) {
     Iterator<Entry<String, JsonNode>> objectDatumFields = objectDatum.fields();
     if (objectDatumFields.hasNext()) {
       // We only infer from the first value in the map
@@ -464,7 +507,7 @@ public class JasvornoConverter {
   }
 
   @VisibleForTesting
-  static MatchType matchArrayElement(JsonNode arrayDatum, Schema schema) {
+  MatchType matchArrayElement(JsonNode arrayDatum, Schema schema) {
     if (arrayDatum.size() >= 1) {
       // We only infer from the first element in the array
       return matches(arrayDatum.get(0), schema.getElementType());
@@ -479,13 +522,14 @@ public class JasvornoConverter {
 
   /**
    * Returns whether null is allowed by the schema.
-   * <p></p>
+   * <p>
+   * </p>
    * Copied from {@code org.kitesdk.data.spi.SchemaUtil.nullOk(Schema)}.
    *
    * @param schema a Schema
    * @return true if schema allows the value to be null
    */
-  public static boolean nullOk(Schema schema) {
+  private static boolean nullOk(Schema schema) {
     if (Schema.Type.NULL == schema.getType()) {
       return true;
     } else if (Schema.Type.UNION == schema.getType()) {
