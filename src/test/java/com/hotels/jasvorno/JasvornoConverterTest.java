@@ -66,6 +66,7 @@ public class JasvornoConverterTest {
   }
 
   /** See: {@link UndeclaredFieldsTest}. */
+  @Test
   public void unknownFieldsIgnored() throws Exception {
     Schema schema = SchemaBuilder
         .builder()
