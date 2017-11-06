@@ -186,8 +186,10 @@ public class JasvornoConverter {
 
     case FLOAT:
       JasvornoConverterException
-          .check(datum.isDouble() && datum.doubleValue() >= -Float.MAX_VALUE && datum.doubleValue() <= Float.MAX_VALUE
-              || datum.isLong() && datum.longValue() >= -Float.MAX_VALUE && datum.longValue() <= Float.MAX_VALUE
+          .check((datum.isDouble() && datum.doubleValue() >= -Float.MAX_VALUE && datum.doubleValue() <= Float.MAX_VALUE)
+              || (datum.isLong()
+                  && datum.longValue() >= (long) -Float.MAX_VALUE
+                  && datum.longValue() <= (long) Float.MAX_VALUE)
               || datum.isFloat()
               || datum.isInt(), "Cannot convert to float: %s", datum);
       return datum.floatValue();
@@ -226,8 +228,8 @@ public class JasvornoConverter {
       JasvornoConverterException.check(datum.isTextual(), "Cannot convert to fixed: %s", datum);
       // TODO: should this be ISO_8859_1?
       byte[] bytes = datum.textValue().getBytes(Charsets.UTF_8);
-      JasvornoConverterException.check(bytes.length < schema.getFixedSize(),
-          "Binary data is too short: %s bytes for %s", bytes.length, schema);
+      JasvornoConverterException.check(bytes.length == schema.getFixedSize(),
+          "Byte length does not match schema size: %s bytes for %s", bytes.length, schema);
       return model.createFixed(null, bytes, schema);
 
     case NULL:
@@ -306,15 +308,21 @@ public class JasvornoConverter {
           Schema.Type.DOUBLE);
     } else if (datum.isLong()) {
       primitiveSchema = closestPrimitive(primitives, Schema.Type.LONG, Schema.Type.DOUBLE);
-    } else if (datum.isFloat()
-        || datum.isDouble() && datum.doubleValue() >= -Float.MAX_VALUE && datum.doubleValue() <= Float.MAX_VALUE
-        || datum.isLong() && datum.longValue() >= -Float.MAX_VALUE && datum.longValue() <= Float.MAX_VALUE) {
+    } else if (datum.isFloat()) {
       primitiveSchema = closestPrimitive(primitives, Schema.Type.FLOAT, Schema.Type.DOUBLE);
     } else if (datum.isDouble()) {
       primitiveSchema = closestPrimitive(primitives, Schema.Type.DOUBLE);
     } else if (datum.isBoolean()) {
       primitiveSchema = closestPrimitive(primitives, Schema.Type.BOOLEAN);
     }
+    if (primitiveSchema == null
+        && ((datum.isDouble() && datum.doubleValue() >= -Float.MAX_VALUE && datum.doubleValue() <= Float.MAX_VALUE)
+            || (datum.isLong()
+                && datum.longValue() >= (long) -Float.MAX_VALUE
+                && datum.longValue() <= (long) Float.MAX_VALUE))) {
+      primitiveSchema = closestPrimitive(primitives, Schema.Type.FLOAT, Schema.Type.DOUBLE);
+    }
+
     if (primitiveSchema != null) {
       return new UnionResolution(primitiveSchema, MatchType.FULL);
     }
@@ -380,8 +388,10 @@ public class JasvornoConverter {
       }
       break;
     case FLOAT:
-      if (datum.isDouble() && datum.doubleValue() >= Float.MIN_VALUE && datum.doubleValue() <= Float.MAX_VALUE
-          || datum.isLong() && datum.longValue() >= Float.MIN_VALUE && datum.longValue() <= Float.MAX_VALUE
+      if (datum.isDouble() && datum.doubleValue() >= -Float.MAX_VALUE && datum.doubleValue() <= Float.MAX_VALUE
+          || datum.isLong()
+              && datum.longValue() >= (long) -Float.MAX_VALUE
+              && datum.longValue() <= (long) Float.MAX_VALUE
           || datum.isFloat()
           || datum.isInt()) {
         return MatchType.FULL;
@@ -419,7 +429,7 @@ public class JasvornoConverter {
       }
       break;
     case NULL:
-      if (datum == null || datum.isNull()) {
+      if (datum.isNull()) {
         return MatchType.FULL;
       }
       break;
@@ -441,9 +451,9 @@ public class JasvornoConverter {
       if (!objectDatum.has(field.name())) {
         log.debug("Field '{}.{}' not present in JsonNode, considering implicit values...", schema.getName(),
             field.name());
-        if (field.defaultValue() != null) {
+        if (field.defaultVal() != null) {
           log.debug("Absent JSON Field '{}.{}' possibly covered by default: '{}'",
-              new Object[] { schema.getName(), field.name(), field.defaultValue() });
+              new Object[] { schema.getName(), field.name(), field.defaultVal() });
           partiallyMatchedFields = true;
         } else if (matches(NullNode.instance, field.schema()) == MatchType.FULL) {
           log.debug("Absent JSON Field '{}.{}' possibly covered by supported null in schema: '{}'",

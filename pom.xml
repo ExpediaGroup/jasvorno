@@ -1,5 +1,6 @@
 
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
@@ -36,6 +37,7 @@
     <jdk.version>1.8</jdk.version>
     <avro.version>1.8.1</avro.version>
     <jackson.version>2.7.4</jackson.version>
+    <pitest.version>1.2.4</pitest.version>
     <shade.prefix>com.hotels.jasvorno.shaded</shade.prefix>
   </properties>
 
@@ -68,6 +70,7 @@
       <scope>test</scope>
       <version>4.12</version>
     </dependency>
+
   </dependencies>
 
   <build>
@@ -122,6 +125,20 @@
             </configuration>
           </execution>
         </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.pitest</groupId>
+        <artifactId>pitest-maven</artifactId>
+        <version>${pitest.version}</version>
+        <configuration>
+          <avoidCallsTo>
+            <avoidCallsTo>java.util.logging</avoidCallsTo>
+            <avoidCallsTo>org.apache.log4j</avoidCallsTo>
+            <avoidCallsTo>org.slf4j</avoidCallsTo>
+            <avoidCallsTo>org.apache.commons.logging</avoidCallsTo>
+            <avoidCallsTo>com.hotels.jasvorno.JasvornoConverterException</avoidCallsTo>
+          </avoidCallsTo>
+        </configuration>
       </plugin>
     </plugins>
   </build>
