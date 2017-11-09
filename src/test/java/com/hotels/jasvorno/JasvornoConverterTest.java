@@ -17,10 +17,13 @@ package com.hotels.jasvorno;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -28,6 +31,7 @@ import org.apache.avro.Schema;
 import org.apache.avro.SchemaBuilder;
 import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericData.EnumSymbol;
+import org.apache.avro.generic.GenericData.Fixed;
 import org.apache.avro.generic.GenericFixed;
 import org.apache.avro.generic.IndexedRecord;
 import org.junit.Test;
@@ -138,7 +142,7 @@ public class JasvornoConverterTest {
   public void nullDatumValue() throws JsonProcessingException, IOException {
     Schema schema = SchemaBuilder.builder().record("record").fields().requiredLong("id").endRecord();
     Object obj = JasvornoConverter.convertToAvro(null, schema, UndeclaredFieldBehaviour.IGNORE);
-    assertTrue(obj == null);
+    assertNull(obj);
   }
 
   @Test
@@ -151,7 +155,7 @@ public class JasvornoConverterTest {
         .requiredString("name")
         .endRecord();
     Object obj = JasvornoConverter.convertToAvro(model, null, schema, UndeclaredFieldBehaviour.IGNORE);
-    assertTrue(obj == null);
+    assertNull(obj);
   }
 
   @Test(expected = JasvornoConverterException.class)
@@ -177,7 +181,7 @@ public class JasvornoConverterTest {
     Object obj = JasvornoConverter.convertToAvro(model, datum, schema, UndeclaredFieldBehaviour.IGNORE);
     assertTrue(obj instanceof IndexedRecord);
     IndexedRecord record = (IndexedRecord) obj;
-    assertTrue(record.get(0).toString().equals("x"));
+    assertThat(record.get(0).toString(), is("x"));
   }
 
   @Test
@@ -188,12 +192,11 @@ public class JasvornoConverterTest {
     Object obj = JasvornoConverter.convertToAvro(datum, schema);
     assertTrue(obj instanceof Map);
     @SuppressWarnings("unchecked")
-    Map<String, Object> map = (Map<String, Object>) obj;
-    assertTrue(map.size() == 2);
-    assertTrue(map.containsKey("name"));
-    assertTrue(map.containsKey("surname"));
-    assertTrue(map.containsValue("bob"));
-    assertTrue(map.containsValue("blue"));
+    Map<String, Object> actualMap = (Map<String, Object>) obj;
+    Map<String, Object> expectedMap = new HashMap<>();
+    expectedMap.put("name", "bob");
+    expectedMap.put("surname", "blue");
+    assertTrue(actualMap.equals(expectedMap));
   }
 
   @Test
@@ -204,9 +207,7 @@ public class JasvornoConverterTest {
     assertTrue(obj instanceof List);
     @SuppressWarnings("unchecked")
     List<Object> list = (List<Object>) obj;
-    assertTrue(list.size() == 2);
-    assertTrue(list.contains(1));
-    assertTrue(list.contains(2));
+    assertTrue(list.equals(Arrays.asList(1, 2)));
   }
 
   @Test
@@ -215,6 +216,7 @@ public class JasvornoConverterTest {
     JsonNode datum = mapper.readTree("true");
     Object obj = JasvornoConverter.convertToAvro(datum, schema);
     assertTrue(obj instanceof Boolean);
+    assertThat(obj, is(true));
   }
 
   @Test
@@ -223,6 +225,7 @@ public class JasvornoConverterTest {
     JsonNode datum = mapper.readTree("2.4");
     Object obj = JasvornoConverter.convertToAvro(datum, schema);
     assertTrue(obj instanceof Float);
+    assertThat(obj, is(2.4F));
   }
 
   @Test
@@ -231,6 +234,7 @@ public class JasvornoConverterTest {
     JsonNode datum = mapper.readTree("2.4");
     Object obj = JasvornoConverter.convertToAvro(datum, schema);
     assertTrue(obj instanceof Double);
+    assertThat(obj, is(2.4));
   }
 
   @Test
@@ -238,8 +242,9 @@ public class JasvornoConverterTest {
     Schema schema = SchemaBuilder.builder().enumeration("Suits").namespace("org.cards").doc("card suit names").symbols(
         "HEART", "SPADE", "DIAMOND", "CLUB");
     JsonNode datum = mapper.readTree("\"HEART\"");
-    Object obj = JasvornoConverter.convertToAvro(datum, schema);
-    assertTrue(obj instanceof EnumSymbol);
+    Object actualObj = JasvornoConverter.convertToAvro(datum, schema);
+    assertTrue(actualObj instanceof EnumSymbol);
+    assertThat(actualObj, is(new EnumSymbol(schema, "HEART")));
   }
 
   @Test(expected = JasvornoConverterException.class)
@@ -253,8 +258,11 @@ public class JasvornoConverterTest {
   public void schemaOfTypeFixed() throws JsonProcessingException, IOException {
     Schema schema = SchemaBuilder.builder().fixed("com.foo.IPv4").size(4);
     JsonNode datum = mapper.readTree("\"zzzz\"");
-    Object obj = JasvornoConverter.convertToAvro(datum, schema);
-    assertTrue(obj instanceof GenericFixed);
+    Object actualObj = JasvornoConverter.convertToAvro(datum, schema);
+    byte[] bytes = ("zzzz").getBytes();
+    GenericFixed expected = new Fixed(schema, bytes);
+    assertTrue(actualObj instanceof GenericFixed);
+    assertThat(actualObj, is(expected));
   }
 
   @Test(expected = JasvornoConverterException.class)
@@ -293,9 +301,12 @@ public class JasvornoConverterTest {
 
   @Test
   public void matchArrayElementOfAmbiguousType() throws Exception {
-    Schema a = SchemaBuilder.record("a").fields().requiredString("n").optionalDouble("d").endRecord();
-    Schema b = SchemaBuilder.record("b").fields().requiredString("n").optionalDouble("e").endRecord();
-    Schema schema = SchemaBuilder.array().items().type(SchemaBuilder.unionOf().type(a).and().type(b).endUnion());
+    Schema schemaA = SchemaBuilder.record("a").fields().requiredString("n").optionalDouble("d").endRecord();
+    Schema schemaB = SchemaBuilder.record("b").fields().requiredString("n").optionalDouble("e").endRecord();
+    Schema schema = SchemaBuilder
+        .array()
+        .items()
+        .type(SchemaBuilder.unionOf().type(schemaA).and().type(schemaB).endUnion());
     JsonNode datum = mapper.readTree("[{\"n\":\"1\"}]");
     MatchType matchType = new JasvornoConverter(model, UndeclaredFieldBehaviour.NO_MATCH).matchArrayElement(datum,
         schema);
@@ -328,9 +339,12 @@ public class JasvornoConverterTest {
 
   @Test
   public void matchMapValueOfAmbiguousType() throws Exception {
-    Schema a = SchemaBuilder.record("a").fields().requiredString("n").optionalDouble("d").endRecord();
-    Schema b = SchemaBuilder.record("b").fields().requiredString("n").optionalDouble("e").endRecord();
-    Schema schema = SchemaBuilder.map().values().type(SchemaBuilder.unionOf().type(a).and().type(b).endUnion());
+    Schema schemaA = SchemaBuilder.record("a").fields().requiredString("n").optionalDouble("d").endRecord();
+    Schema schemaB = SchemaBuilder.record("b").fields().requiredString("n").optionalDouble("e").endRecord();
+    Schema schema = SchemaBuilder
+        .map()
+        .values()
+        .type(SchemaBuilder.unionOf().type(schemaA).and().type(schemaB).endUnion());
     JsonNode datum = mapper.readTree("{\"1\":{\"n\":\"1\"}}");
     MatchType matchType = new JasvornoConverter(model, UndeclaredFieldBehaviour.NO_MATCH).matchMapValue(datum, schema);
     assertThat(matchType, is(MatchType.AMBIGUOUS));
@@ -608,21 +622,21 @@ public class JasvornoConverterTest {
 
   @Test
   public void unionOneFullMatchOneAmbiguousMatch() throws Exception {
-    Schema a = SchemaBuilder.record("a").fields().requiredString("n").endRecord();
-    Schema b = SchemaBuilder.record("b").fields().requiredString("n").optionalDouble("d").endRecord();
-    Schema schema = SchemaBuilder.unionOf().type(a).and().type(b).endUnion();
+    Schema schemaA = SchemaBuilder.record("a").fields().requiredString("n").endRecord();
+    Schema schemaB = SchemaBuilder.record("b").fields().requiredString("n").optionalDouble("d").endRecord();
+    Schema schema = SchemaBuilder.unionOf().type(schemaA).and().type(schemaB).endUnion();
     JsonNode datum = mapper.readTree("{\"n\":\"y\"}");
     UnionResolution unionResolution = new JasvornoConverter(model, UndeclaredFieldBehaviour.NO_MATCH)
         .resolveUnion(datum, schema.getTypes());
     assertThat(unionResolution.matchType, is(MatchType.FULL));
-    assertThat(unionResolution.schema, is(a));
+    assertThat(unionResolution.schema, is(schemaA));
   }
 
   @Test
   public void unionTwoFullMatches() throws Exception {
-    Schema a = SchemaBuilder.record("a").fields().requiredString("n").endRecord();
-    Schema b = SchemaBuilder.record("b").fields().requiredString("n").endRecord();
-    Schema schema = SchemaBuilder.unionOf().type(a).and().type(b).endUnion();
+    Schema schemaA = SchemaBuilder.record("a").fields().requiredString("n").endRecord();
+    Schema schemaB = SchemaBuilder.record("b").fields().requiredString("n").endRecord();
+    Schema schema = SchemaBuilder.unionOf().type(schemaA).and().type(schemaB).endUnion();
     JsonNode datum = mapper.readTree("{\"n\":\"y\"}");
     UnionResolution unionResolution = new JasvornoConverter(model, UndeclaredFieldBehaviour.NO_MATCH)
         .resolveUnion(datum, schema.getTypes());
@@ -632,131 +646,131 @@ public class JasvornoConverterTest {
 
   @Test
   public void unionOneFullMatchOneAmbiguousMatchRecordFavoursFull() throws Exception {
-    Schema a = SchemaBuilder.record("a").fields().requiredString("n").optionalDouble("o").endRecord();
-    Schema b = SchemaBuilder.record("b").fields().requiredString("n").endRecord();
-    Schema schema = SchemaBuilder.unionOf().type(a).and().type(b).endUnion();
+    Schema schemaA = SchemaBuilder.record("a").fields().requiredString("n").optionalDouble("o").endRecord();
+    Schema schemaB = SchemaBuilder.record("b").fields().requiredString("n").endRecord();
+    Schema schema = SchemaBuilder.unionOf().type(schemaA).and().type(schemaB).endUnion();
     JsonNode datum = mapper.readTree("{\"n\":\"y\"}");
     UnionResolution unionResolution = new JasvornoConverter(model, UndeclaredFieldBehaviour.NO_MATCH)
         .resolveUnion(datum, schema.getTypes());
     assertThat(unionResolution.matchType, is(MatchType.FULL));
-    assertThat(unionResolution.schema, is(b));
+    assertThat(unionResolution.schema, is(schemaB));
   }
 
   @Test
   public void unionTwoRecordAmbiguities() throws Exception {
-    Schema a = SchemaBuilder.record("a").fields().requiredString("n").optionalDouble("d").endRecord();
-    Schema b = SchemaBuilder.record("b").fields().requiredString("n").optionalDouble("e").endRecord();
-    Schema schema = SchemaBuilder.unionOf().type(a).and().type(b).endUnion();
+    Schema schemaA = SchemaBuilder.record("a").fields().requiredString("n").optionalDouble("d").endRecord();
+    Schema schemaB = SchemaBuilder.record("b").fields().requiredString("n").optionalDouble("e").endRecord();
+    Schema schema = SchemaBuilder.unionOf().type(schemaA).and().type(schemaB).endUnion();
     JsonNode datum = mapper.readTree("{\"n\":\"y\"}");
     UnionResolution unionResolution = new JasvornoConverter(model, UndeclaredFieldBehaviour.NO_MATCH)
         .resolveUnion(datum, schema.getTypes());
     assertThat(unionResolution.matchType, is(MatchType.AMBIGUOUS));
-    assertThat(unionResolution.schema, is(a)); // the first ambiguous match
+    assertThat(unionResolution.schema, is(schemaA)); // the first ambiguous match
   }
 
   @Test
   public void unionOneAmbiguousMatchPromotedToFull() throws Exception {
-    Schema a = SchemaBuilder.record("a").fields().requiredString("n").optionalDouble("d").endRecord();
-    Schema schema = SchemaBuilder.unionOf().type(a).endUnion();
+    Schema schemaA = SchemaBuilder.record("a").fields().requiredString("n").optionalDouble("d").endRecord();
+    Schema schema = SchemaBuilder.unionOf().type(schemaA).endUnion();
     JsonNode datum = mapper.readTree("{\"n\":\"y\"}");
     UnionResolution unionResolution = new JasvornoConverter(model, UndeclaredFieldBehaviour.NO_MATCH)
         .resolveUnion(datum, schema.getTypes());
     assertThat(unionResolution.matchType, is(MatchType.FULL));
-    assertThat(unionResolution.schema, is(a)); // expected
+    assertThat(unionResolution.schema, is(schemaA)); // expected
   }
 
   @Test
   public void unionDoubleInFloatRangeMax() throws JsonProcessingException, IOException {
-    Schema a = SchemaBuilder.builder().floatType();
-    Schema b = SchemaBuilder.builder().intType();
-    Schema schema = SchemaBuilder.unionOf().type(a).and().type(b).endUnion();
+    Schema schemaA = SchemaBuilder.builder().floatType();
+    Schema schemaB = SchemaBuilder.builder().intType();
+    Schema schema = SchemaBuilder.unionOf().type(schemaA).and().type(schemaB).endUnion();
     JsonNode datum = new DoubleNode(Float.MAX_VALUE);
     UnionResolution unionResolution = new JasvornoConverter(model, UndeclaredFieldBehaviour.NO_MATCH)
         .resolveUnion(datum, schema.getTypes());
     assertThat(unionResolution.matchType, is(MatchType.FULL));
-    assertThat(unionResolution.schema, is(a));
+    assertThat(unionResolution.schema, is(schemaA));
   }
 
   @Test
   public void unionDoubleInFloatRangeMin() throws JsonProcessingException, IOException {
-    Schema a = SchemaBuilder.builder().floatType();
-    Schema b = SchemaBuilder.builder().intType();
-    Schema schema = SchemaBuilder.unionOf().type(a).and().type(b).endUnion();
+    Schema schemaA = SchemaBuilder.builder().floatType();
+    Schema schemaB = SchemaBuilder.builder().intType();
+    Schema schema = SchemaBuilder.unionOf().type(schemaA).and().type(schemaB).endUnion();
     JsonNode datum = new DoubleNode(-Float.MAX_VALUE);
     UnionResolution unionResolution = new JasvornoConverter(model, UndeclaredFieldBehaviour.NO_MATCH)
         .resolveUnion(datum, schema.getTypes());
     assertThat(unionResolution.matchType, is(MatchType.FULL));
-    assertThat(unionResolution.schema, is(a));
+    assertThat(unionResolution.schema, is(schemaA));
   }
 
   @Test
   public void unionLongInFloatRangeMax() throws JsonProcessingException, IOException {
-    Schema a = SchemaBuilder.builder().floatType();
-    Schema b = SchemaBuilder.builder().intType();
-    Schema schema = SchemaBuilder.unionOf().type(a).and().type(b).endUnion();
+    Schema schemaA = SchemaBuilder.builder().floatType();
+    Schema schemaB = SchemaBuilder.builder().intType();
+    Schema schema = SchemaBuilder.unionOf().type(schemaA).and().type(schemaB).endUnion();
     JsonNode datum = new LongNode((long) Float.MAX_VALUE);
     UnionResolution unionResolution = new JasvornoConverter(model, UndeclaredFieldBehaviour.NO_MATCH)
         .resolveUnion(datum, schema.getTypes());
     assertThat(unionResolution.matchType, is(MatchType.FULL));
-    assertThat(unionResolution.schema, is(a));
+    assertThat(unionResolution.schema, is(schemaA));
   }
 
   @Test
   public void unionLongInFloatRangeMin() throws JsonProcessingException, IOException {
-    Schema a = SchemaBuilder.builder().floatType();
-    Schema b = SchemaBuilder.builder().intType();
-    Schema schema = SchemaBuilder.unionOf().type(a).and().type(b).endUnion();
+    Schema schemaA = SchemaBuilder.builder().floatType();
+    Schema schemaB = SchemaBuilder.builder().intType();
+    Schema schema = SchemaBuilder.unionOf().type(schemaA).and().type(schemaB).endUnion();
     JsonNode datum = new LongNode((long) -Float.MAX_VALUE);
     UnionResolution unionResolution = new JasvornoConverter(model, UndeclaredFieldBehaviour.NO_MATCH)
         .resolveUnion(datum, schema.getTypes());
     assertThat(unionResolution.matchType, is(MatchType.FULL));
-    assertThat(unionResolution.schema, is(a));
+    assertThat(unionResolution.schema, is(schemaA));
   }
 
   @Test
   public void unionLongInsideFloatRange() throws JsonProcessingException, IOException {
-    Schema a = SchemaBuilder.builder().floatType();
-    Schema b = SchemaBuilder.builder().intType();
-    Schema schema = SchemaBuilder.unionOf().type(a).and().type(b).endUnion();
+    Schema schemaA = SchemaBuilder.builder().floatType();
+    Schema schemaB = SchemaBuilder.builder().intType();
+    Schema schema = SchemaBuilder.unionOf().type(schemaA).and().type(schemaB).endUnion();
     JsonNode datum = new LongNode((long) (0.5 * Float.MAX_VALUE));
     UnionResolution unionResolution = new JasvornoConverter(model, UndeclaredFieldBehaviour.NO_MATCH)
         .resolveUnion(datum, schema.getTypes());
     assertThat(unionResolution.matchType, is(MatchType.FULL));
-    assertThat(unionResolution.schema, is(a));
+    assertThat(unionResolution.schema, is(schemaA));
   }
 
   @Test
   public void unionBoolean() throws JsonProcessingException, IOException {
-    Schema a = SchemaBuilder.builder().booleanType();
-    Schema schema = SchemaBuilder.unionOf().type(a).endUnion();
+    Schema schemaA = SchemaBuilder.builder().booleanType();
+    Schema schema = SchemaBuilder.unionOf().type(schemaA).endUnion();
     JsonNode datum = mapper.readTree("true");
     UnionResolution unionResolution = new JasvornoConverter(model, UndeclaredFieldBehaviour.NO_MATCH)
         .resolveUnion(datum, schema.getTypes());
     assertThat(unionResolution.matchType, is(MatchType.FULL));
-    assertThat(unionResolution.schema, is(a));
+    assertThat(unionResolution.schema, is(schemaA));
   }
 
   @Test
   public void unionMap() throws JsonProcessingException, IOException {
-    Schema a = SchemaBuilder.map().values().intType();
-    Schema schema = SchemaBuilder.unionOf().type(a).endUnion();
+    Schema schemaA = SchemaBuilder.map().values().intType();
+    Schema schema = SchemaBuilder.unionOf().type(schemaA).endUnion();
     JsonNode datum = mapper.readTree("{\"n\": 2}");
     UnionResolution unionResolution = new JasvornoConverter(model, UndeclaredFieldBehaviour.NO_MATCH)
         .resolveUnion(datum, schema.getTypes());
     assertThat(unionResolution.matchType, is(MatchType.FULL));
-    assertThat(unionResolution.schema, is(a)); // expected
+    assertThat(unionResolution.schema, is(schemaA)); // expected
   }
 
   @Test
   public void unionEnum() throws JsonProcessingException, IOException {
-    Schema a = SchemaBuilder.builder().enumeration("Suits").namespace("org.cards").doc("card suit names").symbols(
+    Schema schemaA = SchemaBuilder.builder().enumeration("Suits").namespace("org.cards").doc("card suit names").symbols(
         "HEART", "SPADE", "DIAMOND", "CLUB");
     JsonNode datum = mapper.readTree("\"HEART\"");
-    Schema schema = SchemaBuilder.unionOf().type(a).endUnion();
+    Schema schema = SchemaBuilder.unionOf().type(schemaA).endUnion();
     UnionResolution unionResolution = new JasvornoConverter(model, UndeclaredFieldBehaviour.NO_MATCH)
         .resolveUnion(datum, schema.getTypes());
     assertThat(unionResolution.matchType, is(MatchType.FULL));
-    assertThat(unionResolution.schema, is(a));
+    assertThat(unionResolution.schema, is(schemaA));
   }
 
   @Test
@@ -774,7 +788,7 @@ public class JasvornoConverterTest {
     Object obj = JasvornoConverter.convertToAvro(datum, schema);
     assertTrue(obj instanceof IndexedRecord);
     IndexedRecord record = (IndexedRecord) obj;
-    assertTrue(record.get(0) == null);
+    assertNull(record.get(0));
   }
 
   @Test
@@ -789,12 +803,12 @@ public class JasvornoConverterTest {
         .and()
         .intType()
         .endUnion()
-        .stringDefault("bob")
+        .stringDefault("x")
         .endRecord();
     JsonNode datum = mapper.readTree("{}");
     Object obj = JasvornoConverter.convertToAvro(datum, schema);
     assertTrue(obj instanceof IndexedRecord);
     IndexedRecord record = (IndexedRecord) obj;
-    assertTrue(record.get(0).toString().equals("bob"));
+    assertThat(record.get(0).toString(), is("x"));
   }
 }
