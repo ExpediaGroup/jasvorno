@@ -6,7 +6,7 @@
 
 ### Changed
 * Corrected check for ensuring byte length is equal to the fixed size schema.
-* Changed lower boundary of float range from Float.MIN to -Float.MAX.
+* Corrected lower boundary of float range - changed Float.MIN to -Float.MAX.
 
 ## 1.0.1 - 2017-03-27
 * Started change log at 1.0.1 release.
