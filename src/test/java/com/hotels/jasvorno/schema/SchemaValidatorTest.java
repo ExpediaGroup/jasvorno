@@ -47,6 +47,27 @@ public class SchemaValidatorTest {
   }
 
   @Test
+  public void recursiveRecord() throws Exception {
+    Schema schema = SchemaBuilder
+        .record("X")
+        .fields()
+        .name("a")
+        .type(SchemaBuilder
+            .record("R")
+            .fields()
+            .name("b")
+            .type(Schema.create(Type.BYTES))
+            .noDefault()
+            .name("r")
+            .type("R")
+            .noDefault()
+            .endRecord())
+        .noDefault()
+        .endRecord();
+    assertThat(SchemaValidator.isValid(schema), is(true));
+  }
+
+  @Test
   public void unionOfBytesAndString() throws Exception {
     Schema schema = SchemaBuilder.builder().unionOf().nullType().and().stringType().and().bytesType().endUnion();
     assertThat(SchemaValidator.isValid(schema), is(false));

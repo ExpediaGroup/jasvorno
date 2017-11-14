@@ -21,6 +21,7 @@ import static org.apache.avro.Schema.Type.RECORD;
 import static org.apache.avro.Schema.Type.UNION;
 
 import java.util.EnumSet;
+import java.util.HashSet;
 import java.util.Set;
 
 import org.apache.avro.Schema;
@@ -30,8 +31,7 @@ import org.apache.avro.Schema.Type;
 public final class SchemaValidator {
   private final static Set<Type> COMPOSITE_TYPES = EnumSet.of(RECORD, UNION, MAP, ARRAY);
 
-  private SchemaValidator() {
-  }
+  private SchemaValidator() {}
 
   /**
    * We don't allow {@code union[bytes, string[, ...]]}.
@@ -51,11 +51,18 @@ public final class SchemaValidator {
    * @throws SchemaValidationException
    */
   public static void validate(Schema schema) throws SchemaValidationException {
-    internalValidate(schema);
+    new SchemaValidator().internalValidate(schema);
   }
 
-  private static void internalValidate(Schema schema) throws SchemaValidationException {
+  private Set<String> recordTypeNames = new HashSet<>();
+
+  private void internalValidate(Schema schema) throws SchemaValidationException {
     if (schema.getType() == RECORD) {
+      String name = schema.getFullName();
+      if (recordTypeNames.contains(name)) {
+        return;
+      }
+      recordTypeNames.add(name);
       for (Field field : schema.getFields()) {
         internalValidate(field.schema());
       }

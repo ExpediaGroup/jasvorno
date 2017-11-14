@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 ### Added
+* Validating of recursive schemas (previously failed with a stack overflow). 
 * Added cast to the float value in check for long in float range.
 
 ### Changed
