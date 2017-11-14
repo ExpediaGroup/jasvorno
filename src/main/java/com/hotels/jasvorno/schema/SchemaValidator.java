@@ -54,7 +54,7 @@ public final class SchemaValidator {
     new SchemaValidator().internalValidate(schema);
   }
 
-  private Set<String> recordTypeNames = new HashSet<>();
+  private final Set<String> recordTypeNames = new HashSet<>();
 
   private void internalValidate(Schema schema) throws SchemaValidationException {
     if (schema.getType() == RECORD) {
