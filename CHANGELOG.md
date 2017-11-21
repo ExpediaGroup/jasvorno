@@ -1,5 +1,9 @@
 # Jasvorno CHANGELOG
 
+## [1.1.1] - 2017-11-21
+### Changed
+* Build settings (to test release builds)
+
 ## [1.1.0] - 2017-11-20
 ### Added
 * Validating of recursive schemas (previously failed with a stack overflow). 
