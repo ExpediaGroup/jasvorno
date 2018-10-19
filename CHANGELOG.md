@@ -1,4 +1,7 @@
 # Jasvorno CHANGELOG
+## Unreleased
+### Changed
+* Upgraded `jackson.version` to 2.9.7 (was 2.7.4).
 
 ## [1.1.1] - 2017-11-21
 ### Changed
