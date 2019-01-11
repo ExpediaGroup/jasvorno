@@ -1,5 +1,9 @@
 # Jasvorno CHANGELOG
 
+## TBD
+### Changed
+* Upgraded `jackson` version to 2.9.8 (was 2.7.4).
+
 ## [1.1.1] - 2017-11-21
 ### Changed
 * Build settings (to test release builds)
