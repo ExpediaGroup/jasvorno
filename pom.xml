@@ -35,7 +35,7 @@
   <properties>
     <jdk.version>1.8</jdk.version>
     <avro.version>1.8.2</avro.version>
-    <jackson.version>2.7.4</jackson.version>
+    <jackson.version>2.9.8</jackson.version>
     <pitest.version>1.2.4</pitest.version>
     <shade.prefix>com.hotels.jasvorno.shaded</shade.prefix>
   </properties>
