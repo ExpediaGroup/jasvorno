@@ -1,6 +1,6 @@
 # Jasvorno CHANGELOG
 
-## TBD
+## [1.1.2] - 2019-07-17
 ### Changed
 * Upgraded `jackson` version to 2.9.9 (was 2.7.4).
 
