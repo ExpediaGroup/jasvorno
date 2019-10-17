@@ -16,7 +16,7 @@
 
   <scm>
     <connection>scm:git:https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/HotelsDotCom/jasvorno.git</connection>
-	<developerConnection>scm:git:https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/HotelsDotCom/jasvorno.git</developerConnection>
+    <developerConnection>scm:git:https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/HotelsDotCom/jasvorno.git</developerConnection>
     <url>https://github.com/HotelsDotCom/jasvorno</url>
     <tag>HEAD</tag>
   </scm>
@@ -35,7 +35,7 @@
   <properties>
     <jdk.version>1.8</jdk.version>
     <avro.version>1.8.2</avro.version>
-    <jackson.version>2.9.9</jackson.version>
+    <jackson.version>2.9.10</jackson.version>
     <pitest.version>1.2.4</pitest.version>
     <shade.prefix>com.hotels.jasvorno.shaded</shade.prefix>
   </properties>
