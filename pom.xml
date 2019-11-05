@@ -5,7 +5,7 @@
   <parent>
     <groupId>com.hotels</groupId>
     <artifactId>hotels-oss-parent</artifactId>
-    <version>2.0.5</version>
+    <version>4.2.0</version>
   </parent>
 
   <artifactId>jasvorno</artifactId>
@@ -35,7 +35,7 @@
   <properties>
     <jdk.version>1.8</jdk.version>
     <avro.version>1.8.2</avro.version>
-    <jackson.version>2.9.10</jackson.version>
+    <jackson.version>2.10.0</jackson.version>
     <pitest.version>1.2.4</pitest.version>
     <shade.prefix>com.hotels.jasvorno.shaded</shade.prefix>
   </properties>
@@ -78,7 +78,7 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-shade-plugin</artifactId>
-          <version>2.4.3</version>
+          <version>3.2.1</version>
         </plugin>
       </plugins>
     </pluginManagement>
