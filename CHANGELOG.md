@@ -2,7 +2,7 @@
 
 ## [TBD] - TBD
 ### Changed
-- Upgraded `jackson` version to 2.10.0 (was 2.9.9).
+- Upgraded `jackson` version to 2.10.1 (was 2.9.9).
 - Upgraded `hotels-oss-parent` version to 4.2.0 (was 2.0.5).
 - Upgraded `maven-shade-plugin` version to 3.2.1 (was 2.4.3).
 
