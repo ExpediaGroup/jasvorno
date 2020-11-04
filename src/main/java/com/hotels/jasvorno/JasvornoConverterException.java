@@ -33,7 +33,7 @@ public class JasvornoConverterException extends RuntimeException {
   /**
    * Precondition-style validation that throws a {@link JasvornoConverterException}.
    *
-   * @param isValid {@code true} if valid, {@code false} if an exception should be thrown
+   * @param isValid {@code true} if vcalid, {@code false} if an exception should be thrown
    * @param message A String message for the exception.
    */
   public static void check(boolean isValid, String message, Object... args) {

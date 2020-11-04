@@ -2,6 +2,7 @@
 
 ## [TBD] - TBD
 ### Changed
+- Fixed issue with `bytes` type.
 - Upgraded `jackson` version to 2.11.3 (was 2.9.9).
 - Upgraded `junit` version to 4.13.1 (was 4.12).
 - Upgraded `pitest` version to 1.5.2 (was 1.2.4).
