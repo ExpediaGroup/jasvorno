@@ -2,9 +2,12 @@
 
 ## [TBD] - TBD
 ### Changed
-- Upgraded `jackson` version to 2.10.1 (was 2.9.9).
-- Upgraded `hotels-oss-parent` version to 4.2.0 (was 2.0.5).
-- Upgraded `maven-shade-plugin` version to 3.2.1 (was 2.4.3).
+- Upgraded `jackson` version to 2.11.3 (was 2.9.9).
+- Upgraded `junit` version to 4.13.1 (was 4.12).
+- Upgraded `pitest` version to 1.5.2 (was 1.2.4).
+- Upgraded `guava` version to 30.0-jre (was 20.0).
+- Upgraded `hotels-oss-parent` version to 6.2.0 (was 2.0.5).
+- Upgraded `maven-shade-plugin` version to 3.2.4 (was 2.4.3).
 
 ## [1.1.2] - 2019-07-17
 ### Changed
