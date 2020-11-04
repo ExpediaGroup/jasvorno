@@ -40,7 +40,7 @@ public class BytesTest {
   @Test
   public void encodeBytesFromJsonBase64EncodedText() {
     JsonNode datum = mapper.createObjectNode()
-        .put("str", Base64.getEncoder().encode("abc".getBytes()));
+        .put("str", Base64.getEncoder().encodeToString("abc".getBytes()));
     GenericRecord avro = (GenericRecord) JasvornoConverter.convertToAvro(model, datum, schema);
     assertThat(new String(((ByteBuffer) avro.get("str")).array()), is("abc"));
   }
