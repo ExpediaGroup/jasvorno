@@ -1,6 +1,6 @@
 # Jasvorno CHANGELOG
 
-## [TBD] - TBD
+## [2.0.0] - 2020-11-05
 ### Changed
 - Fixed issue with `bytes` type.
 - Upgraded `jackson` version to 2.11.3 (was 2.9.9).
