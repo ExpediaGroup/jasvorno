@@ -16,11 +16,14 @@
 package com.hotels.jasvorno;
 
 import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
+
+import java.nio.ByteBuffer;
+import java.util.Base64;
 
 import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericData;
-import org.apache.avro.generic.GenericData.Record;
+import org.apache.avro.generic.GenericRecord;
 import org.junit.Test;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -35,18 +38,19 @@ public class BytesTest {
   public ObjectMapper mapper = new ObjectMapper();
 
   @Test
-  public void encodeValueArbitraryJson() throws Exception {
-    String json = "{ \"str\": \"\\u0000\\u0001\\u0002\" }";
-    JsonNode datum = mapper.readTree(json);
-    Record avro = (GenericData.Record) JasvornoConverter.convertToAvro(model, datum, schema);
-    assertThat(avro.toString(), is("{\"str\": {\"bytes\": \"\\u0000\\u0001\\u0002\"}}"));
+  public void encodeBytesFromJsonBase64EncodedText() {
+    JsonNode datum = mapper.createObjectNode()
+        .put("str", Base64.getEncoder().encodeToString("abc".getBytes()));
+    GenericRecord avro = (GenericRecord) JasvornoConverter.convertToAvro(model, datum, schema);
+    assertThat(new String(((ByteBuffer) avro.get("str")).array()), is("abc"));
   }
 
-  @Test(expected = JasvornoConverterException.class)
-  public void encodeValueAvroCompatible() throws Exception {
-    String json = "{ \"str\": { \"bytes\": \"AAEC\"} }";
-    JsonNode datum = mapper.readTree(json);
-    JasvornoConverter.convertToAvro(model, datum, schema);
+  @Test
+  public void encodeBytesFromJsonBinary() {
+    JsonNode datum = mapper.createObjectNode()
+        .put("str", "abc".getBytes());
+    GenericRecord avro = (GenericRecord) JasvornoConverter.convertToAvro(model, datum, schema);
+    assertThat(new String(((ByteBuffer) avro.get("str")).array()), is("abc"));
   }
 
 }

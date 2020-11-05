@@ -15,6 +15,8 @@
  */
 package com.hotels.jasvorno;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -216,12 +218,11 @@ public class JasvornoConverter {
       return model.createEnum(datum.textValue(), schema);
 
     case BYTES:
-      JasvornoConverterException.check(datum.isTextual(), "Cannot convert to binary: %s", datum);
+      JasvornoConverterException.check(datum.isTextual() || datum.isBinary(), "Cannot convert to binary: %s", datum);
       try {
-        // TODO: should this be ISO_8859_1?
-        return ByteBuffer.wrap(datum.textValue().getBytes(Charsets.UTF_8));
-      } catch (IllegalArgumentException e) {
-        throw new JasvornoConverterException("Failed to read JSON binary, not a unicode escaped string", e);
+        return ByteBuffer.wrap(datum.binaryValue());
+      } catch (IOException e) {
+        throw new UncheckedIOException(e);
       }
 
     case FIXED:
